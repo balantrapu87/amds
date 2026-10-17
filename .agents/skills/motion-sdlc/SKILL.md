@@ -65,16 +65,16 @@ npm --prefix remotion test -- --run
   3. Increment `ATTEMPT` and restart Tier 1.
 
 * **On Failure (Attempt 3 - Budget Exhausted):**
-  Halt speculative modifications immediately and restore the workspace to a clean state.
-  *(Prerequisite: Baseline project files must be committed before starting feature work so untracked repo files are not removed).*
+  Halt speculative modifications immediately and revert only the changed and created feature files (never perform a blanket global clean):
   ```bash
-  # Tier 4 Exhaustion Fallback
-  git reset --hard HEAD && git clean -fd
+  # Tier 4 Exhaustion Fallback: Target only feature code scopes
+  git restore --staged --worktree engine/ remotion/ tests/
+  git clean -fd engine/ remotion/ tests/
   rm -f /tmp/smoke.png
-  echo "Quality gate failed after 3 attempts. Workspace restored to clean state."
+  echo "Quality gate failed after 3 attempts. Target code paths restored to clean baseline."
   exit 1
   ```
-  *(Alternative if post-mortem triage is required: `git stash push -u -m "sdlc-failed-attempt-$(date +%s)"`)*
+  *(Alternative to preserve work for post-mortem analysis: `git stash push -u -m "sdlc-failed-attempt-$(date +%s)" -- engine/ remotion/ tests/`)*
 
 * **On Success (All Tiers Exit 0):**
   Remove transient artifacts and create the verified commit:
