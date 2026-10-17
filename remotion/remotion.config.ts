@@ -10,13 +10,3 @@ Config.setChromiumOpenGlRenderer('angle');
 Config.setChromiumMultiProcessOnLinux(true);
 Config.setConcurrency(16);
 
-// Hardware acceleration and WebGL flags for headless Chromium on Linux
-Config.setChromiumFlags([
-  '--enable-webgl',
-  '--ignore-gpu-blocklist',
-  '--enable-gpu-rasterization',
-  '--enable-zero-copy',
-  '--no-sandbox',
-  '--disable-setuid-sandbox',
-  '--disable-dev-shm-usage',
-]);

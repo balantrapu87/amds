@@ -3,6 +3,7 @@ import { useCurrentFrame, useVideoConfig } from 'remotion';
 import { ThreeCanvas } from '@remotion/three';
 import * as THREE from 'three';
 import { ThreeParams, ThemeTokens } from '../types';
+import { frameToRadian } from '../utils/math';
 
 interface ThreeSceneProps {
   threeParams?: ThreeParams;
@@ -24,11 +25,10 @@ const DeterministicMesh: React.FC<{
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Pure function: rotation = (frame / fps) * speed * 2PI
-  const timeSeconds = frame / fps;
-  const rotX = timeSeconds * params.rotation_speed_x * Math.PI * 2;
-  const rotY = timeSeconds * params.rotation_speed_y * Math.PI * 2;
-  const rotZ = timeSeconds * params.rotation_speed_z * Math.PI * 2;
+  // Pure function: rotation = frameToRadian(frame, fps, speed)
+  const rotX = frameToRadian(frame, fps, params.rotation_speed_x);
+  const rotY = frameToRadian(frame, fps, params.rotation_speed_y);
+  const rotZ = frameToRadian(frame, fps, params.rotation_speed_z);
 
   const meshColor = params.color || theme.accent_color;
 

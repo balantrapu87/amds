@@ -1,7 +1,7 @@
 import React from 'react';
 import { Composition } from 'remotion';
 import { MainComposition } from './MainComposition';
-import { DEFAULT_STUDIO_PAYLOAD, StudioJobPayload } from './types';
+import { DEFAULT_STORYBOARD, StoryboardContract } from './types/storyboard';
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -9,19 +9,21 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="MainComposition"
         component={MainComposition}
-        durationInFrames={DEFAULT_STUDIO_PAYLOAD.scenes.reduce(
-          (acc, s) => acc + s.duration_in_frames,
+        durationInFrames={DEFAULT_STORYBOARD.scenes.reduce(
+          (acc, s) => acc + (s.duration_frames || 30),
           0
         )}
-        fps={DEFAULT_STUDIO_PAYLOAD.fps}
-        width={DEFAULT_STUDIO_PAYLOAD.width}
-        height={DEFAULT_STUDIO_PAYLOAD.height}
-        defaultProps={DEFAULT_STUDIO_PAYLOAD}
+        fps={DEFAULT_STORYBOARD.fps}
+        width={DEFAULT_STORYBOARD.width}
+        height={DEFAULT_STORYBOARD.height}
+        defaultProps={DEFAULT_STORYBOARD}
         calculateMetadata={async ({ props }) => {
-          const payload = props as StudioJobPayload;
+          const payload = props as StoryboardContract;
           const totalFrames =
-            payload?.scenes?.reduce((acc, s) => acc + s.duration_in_frames, 0) ||
-            300;
+            payload?.scenes?.reduce(
+              (acc, s) => acc + (s.duration_frames || (s as any).duration_in_frames || 30),
+              0
+            ) || 30;
 
           return {
             durationInFrames: totalFrames,

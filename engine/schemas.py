@@ -1,6 +1,7 @@
 """
 Pydantic v2 Data Models for Autonomous Motion Design Studio.
-Defines contracts for ThemeTokens, SceneNode, AudioManifest, and StudioJobPayload.
+Defines foundational contracts for ThemeTokens, SceneNode, and StoryboardContract,
+alongside audio mastering contracts and execution payloads.
 """
 
 from enum import Enum
@@ -14,31 +15,101 @@ HEX_COLOR_REGEX = re.compile(r"^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{
 
 class ThemeTokens(BaseModel):
     """Visual design tokens defining the chromatic and typographic system."""
-    primary_color: str = Field(default="#6366F1", description="Primary brand color (hex)")
-    secondary_color: str = Field(default="#8B5CF6", description="Secondary accent color (hex)")
-    accent_color: str = Field(default="#06B6D4", description="Highlight accent color (hex)")
-    background_color: str = Field(default="#0F172A", description="Base background color (hex)")
-    surface_color: str = Field(default="#1E293B", description="Card/Surface container color (hex)")
-    text_color: str = Field(default="#F8FAFC", description="Primary typography color (hex)")
-    text_muted_color: str = Field(default="#94A3B8", description="Secondary typography color (hex)")
-    font_family: str = Field(default="Inter, sans-serif", description="Font family rule")
+    background_hex: str = Field(default="#0b0f19", description="Base background color (hex)")
+    primary_hex: str = Field(default="#38bdf8", description="Primary brand color (hex)")
+    text_hex: str = Field(default="#f8fafc", description="Primary typography color (hex)")
+    font_family: str = Field(default="Inter", description="Font family rule")
+
+    # Optional design tokens for extended surfaces
+    secondary_color: Optional[str] = Field(default="#8B5CF6", description="Secondary accent color (hex)")
+    accent_color: Optional[str] = Field(default="#06B6D4", description="Highlight accent color (hex)")
+    surface_color: Optional[str] = Field(default="#1E293B", description="Card/Surface container color (hex)")
+    text_muted_color: Optional[str] = Field(default="#94A3B8", description="Secondary typography color (hex)")
     border_radius: int = Field(default=16, ge=0, le=64, description="Border radius in pixels")
     padding: int = Field(default=32, ge=8, le=128, description="Base padding in pixels")
 
     @field_validator(
-        "primary_color",
-        "secondary_color",
-        "accent_color",
-        "background_color",
-        "surface_color",
-        "text_color",
-        "text_muted_color",
+        "background_hex",
+        "primary_hex",
+        "text_hex",
     )
     @classmethod
     def validate_hex_color(cls, v: str) -> str:
         if not HEX_COLOR_REGEX.match(v):
             raise ValueError(f"Color '{v}' is not a valid hex string (#RGB, #RRGGBB, or #RRGGBBAA).")
         return v
+
+    @field_validator(
+        "secondary_color",
+        "accent_color",
+        "surface_color",
+        "text_muted_color",
+    )
+    @classmethod
+    def validate_optional_hex(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and not HEX_COLOR_REGEX.match(v):
+            raise ValueError(f"Color '{v}' is not a valid hex string.")
+        return v
+
+    @property
+    def primary_color(self) -> str:
+        return self.primary_hex
+
+    @property
+    def background_color(self) -> str:
+        return self.background_hex
+
+    @property
+    def text_color(self) -> str:
+        return self.text_hex
+
+
+RenderLayer = Literal["three_dimensional", "kinetic_typography"]
+
+
+class SceneNode(BaseModel):
+    """Individual scene specification within the timeline."""
+    scene_id: str = Field(..., min_length=1, description="Unique scene identifier")
+    duration_frames: int = Field(..., ge=15, le=1800, description="Scene duration in frames (minimum 15)")
+    render_layer: RenderLayer = Field(
+        default="kinetic_typography", description="Render layer engine mode"
+    )
+    headline: str = Field(..., min_length=1, max_length=120, description="Primary header copy")
+    icon_asset: str = Field(default="Zap", description="Lucide icon name identifier")
+
+    # Compatibility properties for composition pipelines
+    @property
+    def id(self) -> str:
+        return self.scene_id
+
+    @property
+    def duration_in_frames(self) -> int:
+        return self.duration_frames
+
+    @property
+    def title(self) -> str:
+        return self.headline
+
+    @property
+    def layout_type(self) -> str:
+        return self.render_layer
+
+
+class StoryboardContract(BaseModel):
+    """Foundational storyboard contract governing deterministic video rendering."""
+    fps: int = Field(default=30, ge=1, le=120, description="Video frame rate (fps)")
+    width: int = Field(default=1080, ge=480, le=3840, description="Video output width in pixels")
+    height: int = Field(default=1920, ge=480, le=3840, description="Video output height in pixels")
+    theme: ThemeTokens = Field(default_factory=ThemeTokens, description="Visual theme tokens")
+    scenes: List[SceneNode] = Field(..., min_length=1, max_length=50, description="Ordered timeline scenes")
+
+    @property
+    def total_duration_frames(self) -> int:
+        return sum(scene.duration_frames for scene in self.scenes)
+
+    @property
+    def total_duration_seconds(self) -> float:
+        return self.total_duration_frames / self.fps
 
 
 class SceneLayoutType(str, Enum):
@@ -68,34 +139,6 @@ class ThreeParams(BaseModel):
     rotation_speed_y: float = Field(default=0.5, description="Rotations per second around Y axis")
     rotation_speed_z: float = Field(default=0.0, description="Rotations per second around Z axis")
 
-    @field_validator("color")
-    @classmethod
-    def validate_optional_hex(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and not HEX_COLOR_REGEX.match(v):
-            raise ValueError(f"Color '{v}' is not a valid hex string.")
-        return v
-
-
-class SceneNode(BaseModel):
-    """Individual scene specification within the timeline."""
-    id: str = Field(..., description="Unique slug for scene identification")
-    frame_start: int = Field(default=0, ge=0, description="Calculated frame start offset in composition")
-    duration_in_frames: int = Field(..., gt=0, le=1800, description="Scene duration in frames (max 60s @ 30fps)")
-    layout_type: SceneLayoutType = Field(default=SceneLayoutType.HYBRID, description="Layout engine mode")
-    title: str = Field(..., min_length=1, max_length=120, description="Primary header copy")
-    subtitle: Optional[str] = Field(default=None, max_length=200, description="Secondary sub-header copy")
-    body_text: Optional[str] = Field(default=None, max_length=500, description="Descriptive sentence or bullet copy")
-    icon_asset: str = Field(default="zap", description="Lucide icon name identifier (e.g., 'activity', 'cpu', 'zap')")
-    svg_overlay_path: Optional[str] = Field(default=None, description="Relative path to sanitized SVG asset")
-    three_params: Optional[ThreeParams] = Field(default=None, description="Optional 3D parameters")
-
-    @model_validator(mode="after")
-    def validate_three_requirements(self) -> "SceneNode":
-        if self.layout_type in (SceneLayoutType.THREE_D_MESH, SceneLayoutType.HYBRID):
-            if self.three_params is None:
-                self.three_params = ThreeParams()
-        return self
-
 
 class AudioManifest(BaseModel):
     """Audio configuration and sidechain ducking mastering contract."""
@@ -120,17 +163,9 @@ class StudioJobPayload(BaseModel):
     audio: AudioManifest = Field(..., description="Audio assets and ducking parameters")
     scenes: List[SceneNode] = Field(..., min_length=1, max_length=50, description="Ordered timeline scenes")
 
-    @model_validator(mode="after")
-    def calculate_frame_offsets(self) -> "StudioJobPayload":
-        current_frame = 0
-        for scene in self.scenes:
-            scene.frame_start = current_frame
-            current_frame += scene.duration_in_frames
-        return self
-
     @property
     def total_duration_in_frames(self) -> int:
-        return sum(scene.duration_in_frames for scene in self.scenes)
+        return sum(scene.duration_frames for scene in self.scenes)
 
     @property
     def total_duration_seconds(self) -> float:
@@ -151,7 +186,4 @@ class RenderRequest(BaseModel):
     def check_brief_or_payload(self) -> "RenderRequest":
         if not self.brief and not self.payload:
             raise ValueError("Either 'brief' or 'payload' must be provided.")
-        if self.brief and not self.voiceover_path and not self.payload:
-            # If generating from brief, we at least need voiceover or mock audio path
-            pass
         return self
