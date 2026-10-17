@@ -1,0 +1,65 @@
+services:
+  # ---------------------------------------------------------------------------
+  # 1. FastAPI Orchestrator & Remotion Dispatcher
+  # ---------------------------------------------------------------------------
+  fastapi-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: motion-engine
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - RENDER_CONCURRENCY=16
+      - LLM_ENDPOINT=http://llama-swap:8080/v1/chat/completions
+      - LLM_MODEL=qwen
+      - OUTPUT_DIR=/app/output
+      - JOBS_DIR=/app/jobs
+    volumes:
+      - ./output:/app/output
+      - ./jobs:/app/jobs
+      - ./assets:/app/assets
+      - /var/run/docker.sock:/var/run/docker.sock
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+    group_add:
+      - "992"  # render group
+      - "44"   # video group
+    networks:
+      - motion-net
+      - llama-swap_default
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ---------------------------------------------------------------------------
+  # 2. Dedicated Remotion Worker (Headless Chromium ANGLE acceleration)
+  # ---------------------------------------------------------------------------
+  remotion-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: motion-remotion-worker
+    restart: unless-stopped
+    command: ["sleep", "infinity"]
+    volumes:
+      - ./output:/app/output
+      - ./jobs:/app/jobs
+      - ./remotion:/app/remotion
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "992"
+      - "44"
+    networks:
+      - motion-net
+
+networks:
+  motion-net:
+    driver: bridge
+  llama-swap_default:
+    external: true

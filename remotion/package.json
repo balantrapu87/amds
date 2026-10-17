@@ -1,0 +1,30 @@
+{
+  "name": "autonomous-motion-remotion",
+  "version": "1.0.0",
+  "description": "Deterministic Remotion composition engine for Autonomous Motion Design Studio",
+  "scripts": {
+    "dev": "remotion preview src/index.ts",
+    "build": "remotion bundle src/index.ts",
+    "render": "remotion render src/index.ts MainComposition out.mp4",
+    "ingest:svg": "node scripts/ingest-svg.mjs"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.1.0",
+    "@react-three/fiber": "^9.0.0",
+    "@remotion/three": "^4.0.200",
+    "gsap": "^3.12.5",
+    "lucide-react": "^1.59.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "^4.0.200",
+    "svgo": "^3.3.2",
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.180.0",
+    "typescript": "^5.7.0"
+  }
+}
