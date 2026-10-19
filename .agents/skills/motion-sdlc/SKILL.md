@@ -92,9 +92,10 @@ npm --prefix remotion test -- --run
    ./scripts/code_review_agent.sh HEAD "feat(motion-sdlc): verify feature implementation" prompts/code_review_system_prompt.txt
    ```
 2. The agent executes automated architectural and security diff analysis:
-   - Queries the LLM (`OPENAI_BASE_URL`) with `prompts/code_review_system_prompt.txt`.
+   - Queries local `llama-swap` using `qwen-coder` (designated coding and code review model).
    - Assesses Deterministic Frame Law, dual-schema synchronization, audio mastering curve, and OWASP safety.
    - Auto-resolves or creates the GitHub PR using `gh pr create` and submits structured inline line comments and review verdict.
+   *(Note: `qwen` is reserved for creative narrative thinking and storyboard synthesis in `engine/api.py`)*.
 3. Review Resolution:
    - **`APPROVE`:** All quality tiers and code review checks pass. The feature is verified and ready for merge.
    - **`REQUEST_CHANGES`:** Treat inline comments as red test assertions. Apply targeted minimal patches addressing each review comment, then rerun Step 4 Quality Gate and Step 5 Review Gate.

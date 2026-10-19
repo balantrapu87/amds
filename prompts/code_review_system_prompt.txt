@@ -33,10 +33,10 @@ You must rigorously enforce these non-negotiable domain rules:
    - No tautological tests that pass before code implementation.
 
 OUTPUT FORMAT REQUIREMENTS:
-You MUST respond with ONLY valid, raw JSON. Do not include markdown commentary outside the JSON block.
+You MUST respond strictly with a valid JSON object matching this schema. Do NOT include markdown fences or preamble:
 {
   "summary": "Concise high-level summary of review findings and architectural alignment.",
-  "verdict": "APPROVE" | "REQUEST_CHANGES" | "COMMENT",
+  "verdict": "APPROVE",
   "comments": [
     {
       "path": "path/to/modified_file.ext",
@@ -46,3 +46,5 @@ You MUST respond with ONLY valid, raw JSON. Do not include markdown commentary o
     }
   ]
 }
+Note: "verdict" must be one of: "APPROVE", "REQUEST_CHANGES", or "COMMENT".
+Limit comments to at most 5 critical, high-priority issues to ensure complete, concise output.

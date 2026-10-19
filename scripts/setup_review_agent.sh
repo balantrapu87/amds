@@ -49,10 +49,20 @@ if [ -f "$(dirname "${BASH_SOURCE[0]}")/../code_review_agent.sh" ]; then
 fi
 
 echo ""
-echo "==> Checking LLM inference endpoint..."
+echo "==> Checking LLM inference endpoint & models..."
 OPENAI_BASE_URL="${OPENAI_BASE_URL:-http://127.0.0.1:8080/v1}"
-if curl -s -f -m 3 "${OPENAI_BASE_URL}/models" >/dev/null 2>&1; then
+if MODELS_JSON=$(curl --noproxy "*" -s -f -m 5 "${OPENAI_BASE_URL}/models" 2>/dev/null); then
   echo "  [✓] LLM endpoint is REACHABLE at ${OPENAI_BASE_URL}"
+  if echo "${MODELS_JSON}" | grep -q '"qwen-coder"'; then
+    echo "  [✓] Model 'qwen-coder' is available (designated for coding & code review)"
+  else
+    echo "  [!] Warning: Model 'qwen-coder' not found in models list."
+  fi
+  if echo "${MODELS_JSON}" | grep -q '"qwen"'; then
+    echo "  [✓] Model 'qwen' is available (designated for thinking & creative writing)"
+  else
+    echo "  [!] Warning: Model 'qwen' not found in models list."
+  fi
 else
   echo "  [!] LLM endpoint at ${OPENAI_BASE_URL} is currently unreachable."
   echo "      Make sure your local LLM container (llama-swap/vllm) or remote API is active."

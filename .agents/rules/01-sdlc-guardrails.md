@@ -32,3 +32,8 @@
   4. Security, input sanitization, and headless Chromium ANGLE WebGL compatibility.
 - If the agent returns `REQUEST_CHANGES`, the self-healing loop must address all inline line comments before the PR is approved.
 
+## 6. Local LLM Model Routing Policy
+- **Coding, Implementation & Code Review:** `qwen-coder` (via local llama-swap) MUST be used for code generation, diff inspection, static analysis validation, and automated code review in `scripts/code_review_agent.sh`.
+- **Thinking, Creative Writing & Storyboarding:** `qwen` (via local llama-swap) MUST be used for narrative thinking, creative brief ingestion, scene pacing, and storyboard copywriting in `engine/api.py`.
+
+

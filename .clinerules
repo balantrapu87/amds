@@ -1,0 +1,25 @@
+# AI Motion Design Studio - Cline Rules
+
+You are running locally via `llama-swap` on AMD ROCm (Qwen 3.8 27B Coder).
+
+## Context & Efficiency Guidelines
+1. **Context Window Constraint**: The local model is running with a 33,792 token context window (~33K, `--ctx-size 33792`). Be concise and avoid unnecessary verbosity or repeating large file contents.
+2. **Concise Reasoning**: Minimize internal monologue or excessive chain-of-thought so response tokens are conserved for code edits and commands.
+3. **Targeted Diffs**: When editing files, prefer modifying specific blocks or functions rather than rewriting whole files.
+
+## Tech Stack & Architecture
+- **Framework**: Remotion (React + TypeScript) for video synthesis.
+- **Backend**: FastAPI / Python (`engine/api.py`).
+- **Styling**: Vanilla CSS / Inline style objects (avoid TailwindCSS unless requested).
+- **Aspect Ratios**: 9:16 (1080x1920) for Shorts/Reels, 16:9 (1920x1080) for landscape.
+- **3D vs 2D**: Reserve Three.js/WebGL 3D geometry strictly for scenes requiring spatial 3D meshes (`hybrid` or `three_dimensional`). Use 2D kinetic typography for narrative/informational slides.
+
+## Testing & Validation Commands
+- **Remotion Render Test**:
+  ```bash
+  npx remotion render remotion/src/index.ts MainComposition output/test.mp4 --props=jobs/<props_file>.json --concurrency=16
+  ```
+- **Still Frame Inspection**:
+  ```bash
+  npx remotion still remotion/src/index.ts MainComposition output/frame.png --frame=60 --props=jobs/<props_file>.json
+  ```

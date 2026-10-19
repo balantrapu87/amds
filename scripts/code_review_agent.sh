@@ -28,8 +28,9 @@ if [ -z "${CUSTOM_PROMPT_FILE}" ] && [ -f "${WORKSPACE_ROOT}/prompts/code_review
 fi
 
 # Endpoint & Model Defaults (Local llama-swap/vllm or OpenAI-compatible)
+# Coding & code review uses qwen-coder; creative thinking uses qwen
 OPENAI_BASE_URL="${OPENAI_BASE_URL:-http://127.0.0.1:8080/v1}"
-MODEL_NAME="${MODEL_NAME:-qwen2.5-32b-instruct}"
+MODEL_NAME="${MODEL_NAME:-qwen-coder}"
 OPENAI_API_KEY="${OPENAI_API_KEY:-dummy-key}"
 DRY_RUN="${DRY_RUN:-0}"
 
@@ -69,8 +70,8 @@ if [ -z "${DIFF_CONTENT}" ]; then
   exit 1
 fi
 
-# Truncate diff if exceptionally large to protect context limits
-DIFF_SNIPPET=$(echo "${DIFF_CONTENT}" | head -n 400)
+# Keep diff snippet bounded to fit comfortably within the LLM KV-cache slot
+DIFF_SNIPPET=$(echo "${DIFF_CONTENT}" | head -n 200 || true)
 
 # Resolve local or remote branch containing this commit
 BRANCH_NAME=$(git branch --contains "${FULL_COMMIT_SHA}" --format="%(refname:short)" | grep -v 'HEAD' | head -n 1 || true)
@@ -91,7 +92,7 @@ Your goal is to inspect code diffs for:
 Be concise, constructive, and actionable. Return ONLY valid raw JSON with this exact structure:
 {
   \"summary\": \"High-level summary of review findings...\",
-  \"verdict\": \"APPROVE\" | \"REQUEST_CHANGES\" | \"COMMENT\",
+  \"verdict\": \"APPROVE\",
   \"comments\": [
     {
       \"path\": \"path/to/file.ext\",
@@ -100,7 +101,8 @@ Be concise, constructive, and actionable. Return ONLY valid raw JSON with this e
       \"body\": \"Actionable review comment\"
     }
   ]
-}"
+}
+Note: verdict must be one of: \"APPROVE\", \"REQUEST_CHANGES\", or \"COMMENT\"."
 
 if [ -n "${CUSTOM_PROMPT_FILE}" ] && [ -f "${CUSTOM_PROMPT_FILE}" ]; then
   echo "==> Using custom review prompt: ${CUSTOM_PROMPT_FILE}"
@@ -109,13 +111,16 @@ else
   SYSTEM_PROMPT="${DEFAULT_SYSTEM_PROMPT}"
 fi
 
-USER_PROMPT="### User Context & Review Scope:
+USER_PROMPT="/no_think
+### User Context & Review Scope:
 ${USER_CONTEXT}
 
 ### Git Commit Diff:
 \`\`\`diff
 ${DIFF_SNIPPET}
-\`\`\`"
+\`\`\`
+
+Provide your concise code review strictly as the requested JSON object without markdown fences or preamble."
 
 # ---------------------------------------------------------------------------
 # 3. Query LLM via curl
@@ -133,10 +138,11 @@ REQUEST_PAYLOAD=$(jq -n \
       {role: "user", content: $user}
     ],
     temperature: 0.1,
-    max_tokens: 2500
+    max_tokens: 4098,
+    response_format: {type: "json_object"}
   }')
 
-if ! RAW_RESPONSE=$(curl -sS "${OPENAI_BASE_URL}/chat/completions" \
+if ! RAW_RESPONSE=$(curl --noproxy "*" -sS "${OPENAI_BASE_URL}/chat/completions" \
   -H "Authorization: Bearer ${OPENAI_API_KEY}" \
   -H "Content-Type: application/json" \
   -d "${REQUEST_PAYLOAD}" 2>&1); then
@@ -146,8 +152,11 @@ if ! RAW_RESPONSE=$(curl -sS "${OPENAI_BASE_URL}/chat/completions" \
   exit 1
 fi
 
-# Extract assistant content and strip markdown code fences if present
+# Extract assistant content (or fallback to reasoning_content if content is empty)
 LLM_CONTENT=$(echo "${RAW_RESPONSE}" | jq -r '.choices[0].message.content // empty' 2>/dev/null || true)
+if [ -z "${LLM_CONTENT}" ]; then
+  LLM_CONTENT=$(echo "${RAW_RESPONSE}" | jq -r '.choices[0].message.reasoning_content // empty' 2>/dev/null || true)
+fi
 
 if [ -z "${LLM_CONTENT}" ]; then
   echo "[-] Error: LLM returned empty response or unparseable payload." >&2
