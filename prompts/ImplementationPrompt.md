@@ -73,7 +73,20 @@ npx --prefix remotion remotion still src/index.ts MainComposition /tmp/smoke.png
 
 ```
 
-If any tier fails, apply targeted fixes (up to 3 attempts). If all tiers exit with code 0, commit the verified baseline changes to git.
+If any tier fails, apply targeted fixes (up to 3 attempts). If all tiers exit with code 0, commit the verified baseline changes to git:
+```bash
+git commit -m "feat(motion-sdlc): implement verified baseline contracts and determinism tests"
+```
+
+---
+
+### Step 5: Automated Code Review Gate
+
+Run the automated code reviewer against the commit:
+```bash
+./scripts/code_review_agent.sh HEAD "Initial baseline contract and determinism implementation" prompts/code_review_system_prompt.txt
+```
+Ensure verdict is `APPROVE` before finalizing the baseline.
 
 ```
 

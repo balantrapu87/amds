@@ -1,6 +1,7 @@
 ---
 name: motion-sdlc
-description: Executes the 4-Phase Agentic SDLC (Spec -> Red Test -> Green Implementation -> Quality Gate) for AI Motion Design Studio.
+description: Executes the 5-Phase Agentic SDLC (Spec -> Red Test -> Green Implementation -> Quality Gate -> Review Gate) for AI Motion Design Studio.
+
 ---
 
 # Motion Studio SDLC Execution Playbook
@@ -77,9 +78,25 @@ npm --prefix remotion test -- --run
   *(Alternative to preserve work for post-mortem analysis: `git stash push -u -m "sdlc-failed-attempt-$(date +%s)" -- engine/ remotion/ tests/`)*
 
 * **On Success (All Tiers Exit 0):**
-  Remove transient artifacts and create the verified commit:
+  Remove transient artifacts, create the verified commit, and proceed to Step 5:
   ```bash
   rm -f /tmp/smoke.png
   git add engine/ remotion/ tests/
   git commit -m "feat(motion-sdlc): implement verified feature with green test gate"
   ```
+
+### Step 5: Automated Code Review & PR Gate (Review Gate)
+
+1. Run the Code Review Agent against the verified commit:
+   ```bash
+   ./scripts/code_review_agent.sh HEAD "feat(motion-sdlc): verify feature implementation" prompts/code_review_system_prompt.txt
+   ```
+2. The agent executes automated architectural and security diff analysis:
+   - Queries the LLM (`OPENAI_BASE_URL`) with `prompts/code_review_system_prompt.txt`.
+   - Assesses Deterministic Frame Law, dual-schema synchronization, audio mastering curve, and OWASP safety.
+   - Auto-resolves or creates the GitHub PR using `gh pr create` and submits structured inline line comments and review verdict.
+3. Review Resolution:
+   - **`APPROVE`:** All quality tiers and code review checks pass. The feature is verified and ready for merge.
+   - **`REQUEST_CHANGES`:** Treat inline comments as red test assertions. Apply targeted minimal patches addressing each review comment, then rerun Step 4 Quality Gate and Step 5 Review Gate.
+   - **`COMMENT`:** Review informational notes and resolve non-blocking improvements.
+
