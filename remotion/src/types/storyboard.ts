@@ -17,7 +17,12 @@ export interface SceneNode {
   duration_frames: number;
   render_layer: RenderLayer;
   headline: string;
+  subtitle?: string;
+  body_text?: string;
   icon_asset: string;
+  three_params?: ThreeParams;
+  voiceover_text?: string;
+  audio_file?: string;
 }
 
 export interface StoryboardContract {

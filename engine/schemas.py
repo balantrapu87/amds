@@ -64,7 +64,9 @@ class ThemeTokens(BaseModel):
         return self.text_hex
 
 
-RenderLayer = Literal["three_dimensional", "kinetic_typography"]
+RenderLayer = Literal[
+    "kinetic_typography", "three_dimensional", "hybrid", "three_d_mesh"
+]
 
 
 class SceneNode(BaseModel):
@@ -75,7 +77,14 @@ class SceneNode(BaseModel):
         default="kinetic_typography", description="Render layer engine mode"
     )
     headline: str = Field(..., min_length=1, max_length=120, description="Primary header copy")
+    subtitle: Optional[str] = Field(default=None, max_length=200, description="Secondary header copy")
+    body_text: Optional[str] = Field(default=None, description="Narrative body copy for the scene")
     icon_asset: str = Field(default="Zap", description="Lucide icon name identifier")
+    three_params: Optional["ThreeParams"] = Field(
+        default=None, description="3D mesh/camera parameters for three_dimensional, hybrid, or three_d_mesh layers"
+    )
+    voiceover_text: str = Field(default="", description="Narration script for this scene (TTS input)")
+    audio_file: Optional[str] = Field(default=None, description="Resolved TTS audio file path relative to remotion/public/")
 
     # Compatibility properties for composition pipelines
     @property
@@ -138,6 +147,10 @@ class ThreeParams(BaseModel):
     rotation_speed_x: float = Field(default=0.2, description="Rotations per second around X axis")
     rotation_speed_y: float = Field(default=0.5, description="Rotations per second around Y axis")
     rotation_speed_z: float = Field(default=0.0, description="Rotations per second around Z axis")
+
+
+# Resolve the SceneNode.three_params forward reference now that ThreeParams is defined.
+SceneNode.model_rebuild()
 
 
 class AudioManifest(BaseModel):

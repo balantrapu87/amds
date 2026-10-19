@@ -96,3 +96,87 @@ def test_empty_scene_list_fails():
             theme=ThemeTokens(),
             scenes=[],
         )
+
+
+# ---------------------------------------------------------------------------
+# Script -> TTS -> Audio pipeline contract tests (new capability)
+# ---------------------------------------------------------------------------
+
+
+def test_scene_node_voiceover_contract_round_trip():
+    """SceneNode must carry per-scene narration (voiceover_text) and a resolved
+    audio_file, and survive a JSON round-trip so Remotion can consume them."""
+    from engine.schemas import SceneNode
+
+    node = SceneNode(
+        scene_id="scene-vo",
+        duration_frames=90,
+        render_layer="kinetic_typography",
+        headline="Narrated Scene",
+        icon_asset="Mic",
+        voiceover_text="Welcome to the autonomous motion studio.",
+        audio_file="job-123/scene-0.mp3",
+    )
+
+    assert node.voiceover_text.startswith("Welcome")
+    assert node.audio_file == "job-123/scene-0.mp3"
+
+    dumped = SceneNode.model_validate_json(node.model_dump_json())
+    assert dumped.voiceover_text == node.voiceover_text
+    assert dumped.audio_file == node.audio_file
+
+
+def test_scene_node_without_voiceover_still_valid():
+    """Backward compatibility: scenes without narration must remain valid."""
+    from engine.schemas import SceneNode
+
+    node = SceneNode(
+        scene_id="silent",
+        duration_frames=60,
+        render_layer="kinetic_typography",
+        headline="Silent Scene",
+    )
+    assert node.voiceover_text == ""
+    assert node.audio_file is None
+
+
+def test_tts_module_exposes_synthesize_script():
+    """engine.tts must expose an async synthesize_script() and synthesize() driven by local edge-tts."""
+    import inspect
+    import engine.tts as tts
+
+    assert hasattr(tts, "synthesize_script")
+    assert hasattr(tts, "synthesize")
+    assert inspect.iscoroutinefunction(tts.synthesize_script)
+    # The backend must be the local edge-tts package.
+    import edge_tts  # noqa: F401  (raises ImportError if edge-tts is not installed)
+
+
+def test_audio_mastering_supports_embedded_voiceover():
+    """FFmpeg mastering must accept voiceover_embedded=True and omit the separate VO input,
+    instead mastering the audio stream that is already muxed into the raw video."""
+    from engine.schemas import AudioManifest
+    from engine.audio import build_ffmpeg_command
+
+    audio = AudioManifest(voiceover_path="/tmp/does_not_matter.wav")
+
+    # Embedded: raw video already carries the narration -> no VO input, no bgm.
+    cmd_embedded = build_ffmpeg_command(
+        raw_video_path="/tmp/raw.mp4",
+        output_mp4_path="/tmp/out.mp4",
+        audio=audio,
+        voiceover_embedded=True,
+    )
+    # The raw video (input 0) is mapped for both video and its embedded audio.
+    assert "0:v:0" in cmd_embedded
+    # The dummy voiceover file must NOT be added as a separate input.
+    assert "/tmp/does_not_matter.wav" not in cmd_embedded
+
+
+def test_audio_mastering_raw_video_has_audio_helper():
+    """engine.audio must expose raw_video_has_audio() for detecting muxed narration."""
+    from engine.audio import raw_video_has_audio
+
+    assert callable(raw_video_has_audio)
+    # A missing file must report False (no audio), not raise.
+    assert raw_video_has_audio("/tmp/definitely_missing_video.mp4") is False

@@ -42,6 +42,8 @@ export interface SceneNode {
   icon_asset: string;
   svg_overlay_path?: string;
   three_params?: ThreeParams;
+  voiceover_text?: string;
+  audio_file?: string;
 }
 
 export interface AudioManifest {

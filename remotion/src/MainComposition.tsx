@@ -1,5 +1,5 @@
 import React from 'react';
-import { Series, AbsoluteFill, useVideoConfig } from 'remotion';
+import { Series, AbsoluteFill, useVideoConfig, Audio, staticFile } from 'remotion';
 import { StoryboardContract, SceneNode } from './types/storyboard';
 import { ThreeScene } from './components/ThreeScene';
 import { KineticScene } from './components/KineticScene';
@@ -85,6 +85,11 @@ export const MainComposition: React.FC<StoryboardContract> = (props) => {
               name={sceneId}
             >
               <AbsoluteFill>
+                {/* Embedded per-scene narration (synthesized by local edge-tts) */}
+                {normalizedScene.audio_file && (
+                  <Audio src={staticFile(`audio/${normalizedScene.audio_file}`)} />
+                )}
+
                 {/* 3D WebGL Layer */}
                 {show3D && (
                   <ThreeScene

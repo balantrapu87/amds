@@ -89,6 +89,7 @@ SAMPLE_PAYLOAD=$(cat <<EOF
         "title": "Autonomous Motion",
         "subtitle": "100% Code-Driven Factory",
         "body_text": "Zero manual GUI intervention from storyboard to final mastered MP4.",
+        "voiceover_text": "Welcome to the autonomous motion studio, a fully code driven video factory.",
         "icon_asset": "zap",
         "three_params": {
           "geometry": "torus",
@@ -109,6 +110,7 @@ SAMPLE_PAYLOAD=$(cat <<EOF
         "title": "GSAP + Chromium Headless",
         "subtitle": "Hardware-Accelerated Frame Ticks",
         "body_text": "Timeline stepped deterministically across 16 parallel CPU workers.",
+        "voiceover_text": "Every frame is a pure function of time, stepped across sixteen parallel workers.",
         "icon_asset": "cpu"
       },
       {
@@ -118,6 +120,7 @@ SAMPLE_PAYLOAD=$(cat <<EOF
         "title": "EBU R128 Mastered",
         "subtitle": "Auto-Ducking Sidechain Audio",
         "body_text": "Integrated loudness normalization compliant with broadcast standards.",
+        "voiceover_text": "Audio is mastered to broadcast loudness, with narration synthesized by local edge TTS.",
         "icon_asset": "activity",
         "three_params": {
           "geometry": "icosahedron",
