@@ -30,7 +30,7 @@ from engine.schemas import (
 from engine.audio import execute_mastering, raw_video_has_audio
 from engine.tts import synthesize_script, probe_duration
 from engine.captions import transcribe, normalize_words, narration_end_ms, CaptionError
-from engine.video_gen import WanClient, generate_scene_clips, VideoGenError
+from engine.video_gen import WanClient, generate_scene_clips, plan_clips, VideoGenError
 
 # Logging configuration
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -331,6 +331,7 @@ async def attach_wan_clips(job_id: str, job_payload: StudioJobPayload) -> None:
             scene_seconds = scene.duration_frames / job_payload.fps
             seed = int(hashlib.sha256(f"{job_id}:{scene.scene_id}".encode()).hexdigest()[:8], 16)
             out_dir = os.path.join(REMOTION_ROOT, "public", "video", job_id, scene.scene_id)
+            clip_lengths = plan_clips(scene_seconds, job_payload.fps)
             paths = await asyncio.to_thread(
                 generate_scene_clips,
                 client, scene.video_prompts,
@@ -339,6 +340,7 @@ async def attach_wan_clips(job_id: str, job_payload: StudioJobPayload) -> None:
             )
             public_root = os.path.join(REMOTION_ROOT, "public")
             scene.clips = [os.path.relpath(p, public_root) for p in paths]
+            scene.clip_frames = clip_lengths[: len(paths)]
             client.close()
             logger.info(f"[{job_id}] Wan clips attached to scene {scene.scene_id}: {scene.clips}")
         except VideoGenError:

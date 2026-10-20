@@ -52,6 +52,7 @@ export interface SceneNode {
   audio_file?: string;
   video_prompts?: string[];
   clips?: string[];
+  clip_frames?: number[];
   captions?: CaptionWord[];
 }
 

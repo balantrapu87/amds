@@ -127,7 +127,8 @@ export const KineticScene: React.FC<KineticSceneProps> = ({ scene, theme }) => {
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: `${theme.padding * 1.5}px`,
+        // Card layout: 10% breathing border on every side (video scenes are full-bleed instead).
+        padding: '10%',
         boxSizing: 'border-box',
         zIndex: 10,
         position: 'relative',
@@ -137,7 +138,7 @@ export const KineticScene: React.FC<KineticSceneProps> = ({ scene, theme }) => {
         ref={cardRef}
         style={{
           width: '100%',
-          maxWidth: '880px',
+          height: '100%',
           backgroundColor: `${theme.surface_color}CC`,
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',

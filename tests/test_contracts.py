@@ -194,6 +194,7 @@ def test_scene_node_video_and_caption_contract_round_trip():
         voiceover_text="Some narration.",
         video_prompts=["A cinematic cricket stadium at dusk", "A batsman swinging in slow motion"],
         clips=["job/s-video-clip-0.mp4", "job/s-video-clip-1.mp4"],
+        clip_frames=[81, 69],
         captions=[
             CaptionWord(text="Some", start_ms=120, end_ms=380),
             CaptionWord(text="narration.", start_ms=380, end_ms=900),
@@ -208,6 +209,7 @@ def test_scene_node_video_and_caption_contract_round_trip():
     reloaded = SceneNode.model_validate_json(scene.model_dump_json())
     assert reloaded.video_prompts == scene.video_prompts
     assert reloaded.clips == scene.clips
+    assert reloaded.clip_frames == [81, 69]
     assert [w.text for w in reloaded.captions] == ["Some", "narration."]
 
     payload = StudioJobPayload.model_validate({

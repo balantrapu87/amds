@@ -3,6 +3,7 @@ import { Series, AbsoluteFill, useVideoConfig, Audio, staticFile } from 'remotio
 import { StoryboardContract, SceneNode } from './types/storyboard';
 import { ThreeScene } from './components/ThreeScene';
 import { KineticScene } from './components/KineticScene';
+import { VideoScene } from './components/VideoScene';
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/600.css';
 import '@fontsource/inter/800.css';
@@ -10,6 +11,7 @@ import '@fontsource/inter/800.css';
 export const MainComposition: React.FC<StoryboardContract> = (props) => {
   const { theme, scenes } = props;
   const { width, height } = useVideoConfig();
+  const channelName = (props as any).channel_name || 'T20CRICTANK';
 
   // Normalize theme tokens supporting both StoryboardContract and legacy models
   const backgroundColor = theme.background_hex || (theme as any).background_color || '#0b0f19';
@@ -64,6 +66,8 @@ export const MainComposition: React.FC<StoryboardContract> = (props) => {
 
           const show3D = layer === 'three_dimensional' || layer === 'three_d_mesh' || layer === 'hybrid';
           const showKinetic = layer === 'kinetic_typography' || layer === 'hybrid';
+          // Full-bleed Wan video scenes take precedence over all other layers.
+          const showVideo = Array.isArray(scene.clips) && scene.clips.length > 0;
 
           const normalizedScene: any = {
             ...scene,
@@ -91,7 +95,7 @@ export const MainComposition: React.FC<StoryboardContract> = (props) => {
                 )}
 
                 {/* 3D WebGL Layer */}
-                {show3D && (
+                {show3D && !showVideo && (
                   <ThreeScene
                     threeParams={(scene as any).three_params}
                     theme={normalizedTheme}
@@ -101,8 +105,13 @@ export const MainComposition: React.FC<StoryboardContract> = (props) => {
                 )}
 
                 {/* 2D Kinetic Typography & Dynamic Vector Layer */}
-                {showKinetic && (
+                {showKinetic && !showVideo && (
                   <KineticScene scene={normalizedScene} theme={normalizedTheme} />
+                )}
+
+                {/* Full-bleed Wan 2.1 Video Layer (clips, scrim, karaoke, brand chip) */}
+                {showVideo && (
+                  <VideoScene scene={normalizedScene} theme={normalizedTheme} channelName={channelName} />
                 )}
               </AbsoluteFill>
             </Series.Sequence>

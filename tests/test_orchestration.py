@@ -139,6 +139,8 @@ def test_attach_wan_clips_generates_and_resolves(monkeypatch):
     monkeypatch.setattr(api, "WanClient", FakeWanClient)
     asyncio.run(api.attach_wan_clips("job", job))
     assert scene.clips == ["video/job/s1/scene-0.mp4"]
+    assert scene.clip_frames == [81]  # plan_clips(5.0s)=[81,69], sliced to 1 returned path
+
 
 
 def test_attach_wan_clips_skips_when_clips_present(monkeypatch):

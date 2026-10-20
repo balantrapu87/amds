@@ -100,6 +100,7 @@ class SceneNode(BaseModel):
     audio_file: Optional[str] = Field(default=None, description="Resolved TTS audio file path relative to remotion/public/")
     video_prompts: Optional[List[str]] = Field(default=None, description="Per-clip text-to-video prompts (Wan 2.1 input)")
     clips: Optional[List[str]] = Field(default=None, description="Resolved generated video clip paths relative to remotion/public/")
+    clip_frames: Optional[List[int]] = Field(default=None, description="Exact frame length of each clip (parallel to clips)")
     captions: Optional[List[CaptionWord]] = Field(default=None, description="Word-level karaoke caption timestamps")
 
     # Compatibility properties for composition pipelines
