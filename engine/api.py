@@ -7,9 +7,10 @@ Remotion multi-core render dispatch, and deterministic audio mastering.
 import os
 import json
 import uuid
+import hashlib
 import asyncio
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List, Optional
 import httpx
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
@@ -21,12 +22,15 @@ from engine.schemas import (
     SceneNode,
     ThemeTokens,
     AudioManifest,
+    CaptionWord,
     SceneLayoutType,
     GeometryType,
     ThreeParams,
 )
 from engine.audio import execute_mastering, raw_video_has_audio
-from engine.tts import synthesize_script
+from engine.tts import synthesize_script, probe_duration
+from engine.captions import transcribe, normalize_words, narration_end_ms, CaptionError
+from engine.video_gen import WanClient, generate_scene_clips, VideoGenError
 
 # Logging configuration
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -57,6 +61,11 @@ REMOTION_ROOT = os.getenv("REMOTION_ROOT", os.path.abspath(os.path.join(os.path.
 OUTPUT_DIR = os.getenv("OUTPUT_DIR", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "output")))
 JOBS_DIR = os.getenv("JOBS_DIR", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "jobs")))
 RENDER_CONCURRENCY = int(os.getenv("RENDER_CONCURRENCY", "16"))
+# Local AI services
+WHISPER_URL = os.getenv("WHISPER_URL", "http://127.0.0.1:8080/v1/audio/transcriptions")
+WAN_COMFYUI_URL = os.getenv("WAN_COMFYUI_URL", "http://127.0.0.1:8080/comfyui")
+# Scene narration tail (ms) appended after the last spoken word before the cut.
+NARRATION_TAIL_MS = int(os.getenv("NARRATION_TAIL_MS", "750"))
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(JOBS_DIR, exist_ok=True)
@@ -92,6 +101,9 @@ async def generate_storyboard_from_brief(
         "7. Each scene MUST include 'voiceover_text': a narration script worded to fit its "
         "duration_frames (roughly 2.5 words per second of scene time) so the synthesized "
         "voiceover matches the scene it plays over.\n"
+        "8. When the brief calls for live-action or photorealistic footage, mark that scene "
+        "'render_layer': 'hybrid' and add 'video_prompts': 1-3 cinematic text-to-video prompts "
+        "(subject, camera move, lighting, mood). Omit video_prompts for pure typography slides.\n"
     )
 
     user_prompt = (
@@ -139,6 +151,7 @@ async def generate_storyboard_from_brief(
                 "body_text": "Key description here",
                 "icon_asset": "cpu",
                 "voiceover_text": "Narration for this scene, worded to fit its duration.",
+                "video_prompts": ["A cinematic description of the scene visuals, camera movement and lighting"],
                 "three_params": {
                     "geometry": "torus",
                     "wireframe": True,
@@ -269,6 +282,71 @@ async def synthesize_voiceover(job_id: str, job_payload: StudioJobPayload) -> No
     logger.info(f"[{job_id}] TTS complete: {narrated}/{len(resolved)} scenes narrated.")
 
 
+async def apply_whisper_timing(job_id: str, job_payload: StudioJobPayload) -> None:
+    """Pipeline stage: audio -> exact narration length + word-level captions.
+
+    Whisper is the length authority: each narrated scene's duration becomes
+    (last word end + NARRATION_TAIL_MS), capped by the measured MP3 length
+    (ffprobe sanity bound so Whisper hallucinations can't stretch scenes).
+    Failures are non-fatal: the authored duration is kept and no captions set.
+    """
+    for scene in job_payload.scenes:
+        if not scene.audio_file:
+            continue
+        mp3_path = os.path.join(REMOTION_ROOT, "public", scene.audio_file)
+        try:
+            payload = await asyncio.to_thread(transcribe, mp3_path, WHISPER_URL)
+            words = normalize_words(payload.get("words"))
+            if not words:
+                logger.warning(f"[{job_id}] Whisper returned no words for {scene.scene_id}; keeping authored duration.")
+                continue
+            end_ms = narration_end_ms(words, tail_ms=NARRATION_TAIL_MS)
+            try:
+                audio_seconds = probe_duration(mp3_path)
+                if audio_seconds > 0:
+                    end_ms = min(end_ms, int(audio_seconds * 1000))
+            except Exception:  # noqa: BLE001 - ffprobe missing: skip the sanity cap
+                logger.warning(f"[{job_id}] ffprobe unavailable; skipping audio-length cap for {scene.scene_id}.")
+            scene.captions = [CaptionWord(**w) for w in words]
+            scene.duration_frames = max(15, min(1800, round(end_ms / 1000 * job_payload.fps)))
+            logger.info(f"[{job_id}] Scene {scene.scene_id} timed to narration: {scene.duration_frames}f, {len(words)} caption words.")
+        except Exception as e:  # noqa: BLE001 - timing must never hard-fail the render
+            logger.warning(f"[{job_id}] Whisper timing failed for {scene.scene_id}: {e}. Keeping authored duration.")
+
+
+async def attach_wan_clips(job_id: str, job_payload: StudioJobPayload) -> None:
+    """Pipeline stage: video_prompts -> generated Wan 2.1 clips (full-bleed source).
+
+    Scenes carrying video_prompts (and no pre-resolved clips) get one Wan clip
+    per planned 4n+1 segment. Deterministic per-scene seed. A generation failure
+    after the full retry budget is a hard stop: video scenes must have clips.
+    """
+    for scene in job_payload.scenes:
+        if not scene.video_prompts or scene.clips:
+            continue
+        if not (scene.voiceover_text or "").strip():
+            continue  # video scenes are timed by narration; no narration, no video
+        try:
+            client = WanClient(WAN_COMFYUI_URL)
+            scene_seconds = scene.duration_frames / job_payload.fps
+            seed = int(hashlib.sha256(f"{job_id}:{scene.scene_id}".encode()).hexdigest()[:8], 16)
+            out_dir = os.path.join(REMOTION_ROOT, "public", "video", job_id, scene.scene_id)
+            paths = await asyncio.to_thread(
+                generate_scene_clips,
+                client, scene.video_prompts,
+                job_payload.width, job_payload.height,
+                scene_seconds, seed, out_dir, job_payload.fps,
+            )
+            public_root = os.path.join(REMOTION_ROOT, "public")
+            scene.clips = [os.path.relpath(p, public_root) for p in paths]
+            client.close()
+            logger.info(f"[{job_id}] Wan clips attached to scene {scene.scene_id}: {scene.clips}")
+        except VideoGenError:
+            raise  # hard stop per design: exhausts 3x14B + 3x1.3B
+        except Exception as e:  # noqa: BLE001 - ComfyUI unreachable etc.
+            raise VideoGenError(f"Wan video generation unavailable for scene {scene.scene_id}: {e}") from e
+
+
 async def execute_render_pipeline(job_id: str, job_payload: StudioJobPayload):
     """
     Asynchronous worker task:
@@ -289,6 +367,19 @@ async def execute_render_pipeline(job_id: str, job_payload: StudioJobPayload):
 
         # 1. Script -> Audio: synthesize per-scene narration via local edge-tts.
         await synthesize_voiceover(job_id, job_payload)
+
+        JOB_REGISTRY[job_id]["status"] = "preparing"
+        JOB_REGISTRY[job_id]["step"] = "whisper_timing"
+
+        # 2. Audio -> exact timing: Whisper word timestamps become scene
+        #    durations and karaoke captions (Whisper is the length authority).
+        await apply_whisper_timing(job_id, job_payload)
+
+        JOB_REGISTRY[job_id]["status"] = "preparing"
+        JOB_REGISTRY[job_id]["step"] = "wan_video_generation"
+
+        # 3. video_prompts -> Wan 2.1 full-bleed clips (hard stop on failure).
+        await attach_wan_clips(job_id, job_payload)
 
         JOB_REGISTRY[job_id]["status"] = "preparing"
         JOB_REGISTRY[job_id]["step"] = "writing_props"

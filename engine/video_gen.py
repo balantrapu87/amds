@@ -190,7 +190,7 @@ def generate_clip(
 
 def generate_scene_clips(
     client: WanClient,
-    prompt: str,
+    prompt,
     job_width: int,
     job_height: int,
     scene_seconds: float,
@@ -202,9 +202,12 @@ def generate_scene_clips(
 ) -> List[str]:
     """Generate all clips for a scene; returns MP4 paths in order.
 
+    `prompt` may be a single string (used for every clip) or a list of
+    per-clip prompts (clips beyond the list reuse the last prompt).
     Retry policy: 3 attempts on the primary model, then 3 on the fallback,
     then a hard VideoGenError. Seeds vary per attempt for diversity.
     """
+    prompts: List[str] = prompt if isinstance(prompt, list) else [prompt]
     primary = primary_model or DEFAULT_MODEL
     fallback = fallback_model or FALLBACK_MODEL
     clips = plan_clips(scene_seconds, fps)
@@ -217,9 +220,10 @@ def generate_scene_clips(
             out_path = out_dir / f"scene-{i}.mp4"
             last_error: Optional[Exception] = None
             for attempt, model in enumerate((primary, primary, primary, fallback, fallback, fallback)):
+                clip_prompt = prompts[i] if i < len(prompts) else prompts[-1]
                 attempt_seed = seed + i * 1000 + attempt
                 try:
-                    path = generate_clip(client, prompt, job_width, job_height, frames,
+                    path = generate_clip(client, clip_prompt, job_width, job_height, frames,
                                          attempt_seed, str(out_path), fps=fps, model=model)
                     results.append(str(path))
                     logger.info("Wan clip ready: %s (model=%s, frames=%d)", path.name, model, frames)

@@ -5,7 +5,9 @@ locally-installed `edge-tts` package (Microsoft neural voices). This is the
 script -> audio stage that runs before Remotion video generation.
 """
 
+import json
 import os
+import subprocess
 import logging
 from typing import List, Optional, Dict, Any
 
@@ -13,6 +15,21 @@ logger = logging.getLogger("tts_synthesis")
 
 # Default neural voice, overridable via environment variable.
 DEFAULT_VOICE = os.getenv("EDGE_TTS_VOICE", "en-US-AriaNeural")
+
+
+def probe_duration(path: str) -> float:
+    """Measured media duration in seconds via ffprobe (sanity bound for Whisper).
+
+    Raises RuntimeError when ffprobe is missing or the file cannot be read.
+    """
+    proc = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "json", path],
+        capture_output=True, text=True,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(f"ffprobe failed for {path}: {proc.stderr[:200]}")
+    data = json.loads(proc.stdout or "{}")
+    return float(data.get("format", {}).get("duration") or 0.0)
 
 
 async def synthesize(text: str, out_path: str, voice: str = DEFAULT_VOICE) -> str:
