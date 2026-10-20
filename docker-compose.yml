@@ -16,6 +16,12 @@ services:
       - LLM_MODEL=qwen
       - LLM_CODER_MODEL=qwen-coder
       - EDGE_TTS_VOICE=en-US-AriaNeural
+      # Local AI services (Whisper + ComfyUI Wan 2.1 on the host)
+      - WHISPER_URL=http://host.docker.internal:8080/v1/audio/transcriptions
+      - WAN_COMFYUI_URL=http://host.docker.internal:8080/comfyui
+      - WAN_MODEL=wan2.1_t2v_14B_fp8_e4m3fn.safetensors
+      - WAN_FALLBACK_MODEL=wan2.1_t2v_1.3B_fp16.safetensors
+      - NARRATION_TAIL_MS=750
       - OUTPUT_DIR=/app/output
       - JOBS_DIR=/app/jobs
     extra_hosts:
