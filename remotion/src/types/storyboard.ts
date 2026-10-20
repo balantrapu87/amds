@@ -12,6 +12,12 @@ export interface ThemeTokens {
   font_family: string;
 }
 
+export interface CaptionWord {
+  text: string;
+  start_ms: number;
+  end_ms: number;
+}
+
 export interface SceneNode {
   scene_id: string;
   duration_frames: number;
@@ -23,6 +29,9 @@ export interface SceneNode {
   three_params?: ThreeParams;
   voiceover_text?: string;
   audio_file?: string;
+  video_prompts?: string[];
+  clips?: string[];
+  captions?: CaptionWord[];
 }
 
 export interface StoryboardContract {
@@ -30,6 +39,7 @@ export interface StoryboardContract {
   width: number;
   height: number;
   theme: ThemeTokens;
+  channel_name?: string;
   scenes: SceneNode[];
 }
 

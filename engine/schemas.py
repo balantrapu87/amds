@@ -69,6 +69,19 @@ RenderLayer = Literal[
 ]
 
 
+class CaptionWord(BaseModel):
+    """A single word-level caption timestamp (scene-relative, milliseconds)."""
+    text: str = Field(..., min_length=1, description="Word or punctuation chunk to display")
+    start_ms: int = Field(..., ge=0, description="Word start offset in ms from scene start")
+    end_ms: int = Field(..., ge=1, description="Word end offset in ms from scene start")
+
+    @model_validator(mode="after")
+    def check_word_timing(self) -> "CaptionWord":
+        if self.end_ms <= self.start_ms:
+            raise ValueError("Caption word end_ms must be strictly greater than start_ms.")
+        return self
+
+
 class SceneNode(BaseModel):
     """Individual scene specification within the timeline."""
     scene_id: str = Field(..., min_length=1, description="Unique scene identifier")
@@ -85,6 +98,9 @@ class SceneNode(BaseModel):
     )
     voiceover_text: str = Field(default="", description="Narration script for this scene (TTS input)")
     audio_file: Optional[str] = Field(default=None, description="Resolved TTS audio file path relative to remotion/public/")
+    video_prompts: Optional[List[str]] = Field(default=None, description="Per-clip text-to-video prompts (Wan 2.1 input)")
+    clips: Optional[List[str]] = Field(default=None, description="Resolved generated video clip paths relative to remotion/public/")
+    captions: Optional[List[CaptionWord]] = Field(default=None, description="Word-level karaoke caption timestamps")
 
     # Compatibility properties for composition pipelines
     @property
@@ -173,6 +189,7 @@ class StudioJobPayload(BaseModel):
     width: int = Field(default=1080, ge=480, le=3840, description="Video output width in pixels")
     height: int = Field(default=1920, ge=480, le=3840, description="Video output height in pixels")
     theme: ThemeTokens = Field(default_factory=ThemeTokens, description="Visual theme tokens")
+    channel_name: Optional[str] = Field(default="T20CRICTANK", max_length=60, description="Brand channel name shown on video scenes")
     audio: AudioManifest = Field(..., description="Audio assets and ducking parameters")
     scenes: List[SceneNode] = Field(..., min_length=1, max_length=50, description="Ordered timeline scenes")
 

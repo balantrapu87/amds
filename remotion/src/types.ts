@@ -31,6 +31,12 @@ export interface ThreeParams {
   rotation_speed_z: number;
 }
 
+export interface CaptionWord {
+  text: string;
+  start_ms: number;
+  end_ms: number;
+}
+
 export interface SceneNode {
   id: string;
   frame_start: number;
@@ -44,6 +50,9 @@ export interface SceneNode {
   three_params?: ThreeParams;
   voiceover_text?: string;
   audio_file?: string;
+  video_prompts?: string[];
+  clips?: string[];
+  captions?: CaptionWord[];
 }
 
 export interface AudioManifest {
@@ -64,6 +73,7 @@ export interface StudioJobPayload {
   width: number;
   height: number;
   theme: ThemeTokens;
+  channel_name?: string;
   audio: AudioManifest;
   scenes: SceneNode[];
 }

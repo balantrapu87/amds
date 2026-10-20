@@ -180,3 +180,51 @@ def test_audio_mastering_raw_video_has_audio_helper():
     assert callable(raw_video_has_audio)
     # A missing file must report False (no audio), not raise.
     assert raw_video_has_audio("/tmp/definitely_missing_video.mp4") is False
+
+
+def test_scene_node_video_and_caption_contract_round_trip():
+    """SceneNode must carry video_prompts, clips, word-level captions; payload must carry channel_name."""
+    from engine.schemas import StudioJobPayload, SceneNode, CaptionWord
+
+    scene = SceneNode(
+        scene_id="s-video",
+        duration_frames=390,
+        render_layer="kinetic_typography",
+        headline="Wan Video Scene",
+        voiceover_text="Some narration.",
+        video_prompts=["A cinematic cricket stadium at dusk", "A batsman swinging in slow motion"],
+        clips=["job/s-video-clip-0.mp4", "job/s-video-clip-1.mp4"],
+        captions=[
+            CaptionWord(text="Some", start_ms=120, end_ms=380),
+            CaptionWord(text="narration.", start_ms=380, end_ms=900),
+        ],
+    )
+    dumped = scene.model_dump()
+    assert dumped["video_prompts"][1].startswith("A batsman")
+    assert dumped["clips"][0] == "job/s-video-clip-0.mp4"
+    assert dumped["captions"][0]["text"] == "Some"
+    assert dumped["captions"][0]["start_ms"] == 120
+
+    reloaded = SceneNode.model_validate_json(scene.model_dump_json())
+    assert reloaded.video_prompts == scene.video_prompts
+    assert reloaded.clips == scene.clips
+    assert [w.text for w in reloaded.captions] == ["Some", "narration."]
+
+    payload = StudioJobPayload.model_validate({
+        "job_id": "job", "fps": 30, "width": 1920, "height": 1080,
+        "audio": {"voiceover_path": "/tmp/x.wav"},
+        "scenes": [scene.model_dump()],
+    })
+    assert payload.channel_name == "T20CRICTANK"  # default brand
+
+
+def test_caption_word_rejects_bad_timing():
+    """Caption words must have non-negative, strictly increasing timing."""
+    from engine.schemas import CaptionWord
+
+    with pytest.raises(ValidationError):
+        CaptionWord(text="x", start_ms=100, end_ms=50)
+    with pytest.raises(ValidationError):
+        CaptionWord(text="x", start_ms=-1, end_ms=5)
+    with pytest.raises(ValidationError):
+        CaptionWord(text="", start_ms=0, end_ms=5)
