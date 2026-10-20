@@ -66,10 +66,10 @@ def plan_clips(scene_seconds: float, fps: int = 30) -> List[int]:
 
 
 def latent_size(job_width: int, job_height: int) -> tuple[int, int]:
-    """Map job aspect to Wan's native latent sizes (16:9 -> 1216x704)."""
+    """Map job aspect to Wan's native latent sizes (16:9 -> 832x480, 9:16 -> 480x832)."""
     if job_width >= job_height:
-        return (1216, 704)
-    return (704, 1216)
+        return (832, 480)
+    return (480, 832)
 
 
 def build_workflow(

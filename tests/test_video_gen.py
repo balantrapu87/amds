@@ -39,9 +39,9 @@ def test_plan_clips_prefers_full_clips():
 
 def test_latent_sizing_by_aspect():
     from engine.video_gen import latent_size
-    assert latent_size(1920, 1080) == (1216, 704)   # 16:9
-    assert latent_size(1080, 1920) == (704, 1216)   # 9:16
-    assert latent_size(1350, 1080) == (1216, 704)   # landscape-ish
+    assert latent_size(1920, 1080) == (832, 480)   # 16:9
+    assert latent_size(1080, 1920) == (480, 832)   # 9:16
+    assert latent_size(1350, 1080) == (832, 480)   # landscape-ish
 
 
 # ---------------- workflow builder ----------------
@@ -51,13 +51,13 @@ def test_build_workflow_structure():
 
     wf = build_workflow(
         prompt="A cricket stadium at dusk",
-        width=1216, height=704, length=81, seed=42,
+        width=832, height=480, length=81, seed=42,
         model="wan2.1_t2v_14B_fp8_e4m3fn.safetensors",
         filename_prefix="job-sc1-c0",
     )
     assert set(wf.keys()) == {"37", "38", "39", "40", "6", "7", "3", "8", "47", "28"}
     assert wf["37"]["inputs"]["unet_name"] == "wan2.1_t2v_14B_fp8_e4m3fn.safetensors"
-    assert wf["40"]["inputs"] == {"width": 1216, "height": 704, "length": 81, "batch_size": 1}
+    assert wf["40"]["inputs"] == {"width": 832, "height": 480, "length": 81, "batch_size": 1}
     assert wf["6"]["inputs"]["text"] == "A cricket stadium at dusk"
     assert wf["3"]["inputs"]["seed"] == 42
     assert wf["3"]["inputs"]["latent_image"] == ["40", 0]

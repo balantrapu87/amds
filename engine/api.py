@@ -171,14 +171,14 @@ async def generate_storyboard_from_brief(
         "model": LLM_MODEL,
         "messages": [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt + f"\nRespond strictly with a JSON object following this shape:\n{json.dumps(schema_example)}"}
+            {"role": "user", "content": user_prompt + f"\nRespond strictly with a JSON object following this shape:\n{json.dumps(schema_example)}\n/no_think"}
         ],
         "temperature": 0.3,
         "response_format": {"type": "json_object"}
     }
 
     try:
-        async with httpx.AsyncClient(timeout=300.0) as client:
+        async with httpx.AsyncClient(timeout=600.0) as client:
             response = await client.post(LLM_ENDPOINT, json=payload)
             response.raise_for_status()
             data = response.json()
