@@ -187,3 +187,22 @@ def test_attach_wan_clips_hard_stops_on_generation_failure(monkeypatch):
     monkeypatch.setattr(api, "WanClient", FakeWanClient)
     with pytest.raises(VideoGenError):
         asyncio.run(api.attach_wan_clips("job", job))
+
+
+def test_apply_whisper_timing_resolves_audio_prefix(monkeypatch):
+    """audio_file is stored without the 'audio/' prefix; transcribe must receive the full path."""
+    import engine.api as api
+
+    scene = _scene(audio_file="audio/job/s1.mp3".replace("audio/", ""))
+    job = _payload([scene])
+    seen = {}
+
+    def spy(path, url):
+        seen["path"] = path
+        return {"words": [{"word": " hi", "start": 0.1, "end": 0.9}]}
+
+    monkeypatch.setattr(api, "transcribe", spy)
+    monkeypatch.setattr(api, "probe_duration", lambda path: 3.0)
+    asyncio.run(api.apply_whisper_timing("job", job))
+    assert "/public/" in seen["path"] and seen["path"].endswith("job/s1.mp3")
+    assert "public/job/s1.mp3" not in seen["path"]  # must not skip the audio/ segment

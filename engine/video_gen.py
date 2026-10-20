@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 FULL_CLIP_FRAMES = 81  # 5.06s @ 30fps — Wan's longest 4n+1 length
 
 DEFAULT_MODEL = os.environ.get("WAN_MODEL", "wan2.1_t2v_14B_fp8_e4m3fn.safetensors")
-FALLBACK_MODEL = os.environ.get("WAN_FALLBACK_MODEL", "wan2.1_t2v_1.3B_fp16.safetensors")
+FALLBACK_MODEL = os.environ.get("WAN_FALLBACK_MODEL", "wan2.1_t2v_1.3B_bf16.safetensors")
 
 _NEGATIVE_PROMPT = (
     "Bright tones, overexposed, static, blurred details, subtitles, style, works, "

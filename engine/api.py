@@ -178,7 +178,7 @@ async def generate_storyboard_from_brief(
     }
 
     try:
-        async with httpx.AsyncClient(timeout=90.0) as client:
+        async with httpx.AsyncClient(timeout=300.0) as client:
             response = await client.post(LLM_ENDPOINT, json=payload)
             response.raise_for_status()
             data = response.json()
@@ -201,7 +201,7 @@ async def generate_storyboard_from_brief(
             return job_payload
 
     except Exception as e:
-        logger.warning(f"LLM semantic generation fallback due to: {e}. Generating deterministic template.")
+        logger.warning(f"LLM semantic generation fallback due to: {type(e).__name__}: {e}. Generating deterministic template.")
         # Fallback to high-quality procedural template
         return StudioJobPayload(
             job_id=str(uuid.uuid4()),
@@ -293,7 +293,7 @@ async def apply_whisper_timing(job_id: str, job_payload: StudioJobPayload) -> No
     for scene in job_payload.scenes:
         if not scene.audio_file:
             continue
-        mp3_path = os.path.join(REMOTION_ROOT, "public", scene.audio_file)
+        mp3_path = os.path.join(REMOTION_ROOT, "public", "audio", scene.audio_file)
         try:
             payload = await asyncio.to_thread(transcribe, mp3_path, WHISPER_URL)
             words = normalize_words(payload.get("words"))
