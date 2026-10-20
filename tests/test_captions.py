@@ -85,3 +85,35 @@ def test_narration_end_is_last_word_end_plus_tail():
     words = [{"text": "a", "start_ms": 100, "end_ms": 400}]
     assert narration_end_ms(words, tail_ms=750) == 1150
     assert narration_end_ms([], tail_ms=750) == 0
+
+
+def test_extract_words_top_level():
+    from engine.captions import extract_words
+
+    payload = {"text": "Hi.", "words": [{"word": " Hi", "start": 0.1, "end": 0.4}]}
+    assert extract_words(payload) == [{"text": "Hi", "start_ms": 100, "end_ms": 400}]
+
+
+def test_extract_words_nested_in_segments():
+    from engine.captions import extract_words
+
+    payload = {
+        "text": "Hi there.",
+        "segments": [
+            {
+                "start": 0.0, "end": 1.0, "text": "Hi there.",
+                "words": [
+                    {"word": " Hi", "start": 0.1, "end": 0.4},
+                    {"word": " there.", "start": 0.5, "end": 0.9},
+                ],
+            }
+        ],
+    }
+    words = extract_words(payload)
+    assert [w["text"] for w in words] == ["Hi", "there."]
+    assert words[1]["start_ms"] == 500
+
+
+def test_extract_words_empty_payload():
+    from engine.captions import extract_words
+    assert extract_words({"text": ""}) == []

@@ -29,7 +29,7 @@ from engine.schemas import (
 )
 from engine.audio import execute_mastering, raw_video_has_audio
 from engine.tts import synthesize_script, probe_duration
-from engine.captions import transcribe, normalize_words, narration_end_ms, CaptionError
+from engine.captions import transcribe, normalize_words, extract_words, narration_end_ms, CaptionError
 from engine.video_gen import WanClient, generate_scene_clips, plan_clips, VideoGenError
 
 # Logging configuration
@@ -296,7 +296,7 @@ async def apply_whisper_timing(job_id: str, job_payload: StudioJobPayload) -> No
         mp3_path = os.path.join(REMOTION_ROOT, "public", "audio", scene.audio_file)
         try:
             payload = await asyncio.to_thread(transcribe, mp3_path, WHISPER_URL)
-            words = normalize_words(payload.get("words"))
+            words = extract_words(payload)
             if not words:
                 logger.warning(f"[{job_id}] Whisper returned no words for {scene.scene_id}; keeping authored duration.")
                 continue

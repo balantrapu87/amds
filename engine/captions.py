@@ -21,6 +21,24 @@ class CaptionError(RuntimeError):
     """Raised when the Whisper endpoint fails or returns unusable output."""
 
 
+def extract_words(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Collect and normalize word timestamps from a Whisper verbose_json payload.
+
+    Handles two layouts:
+    - OpenAI standard: a top-level `words` array.
+    - llama-swap / local servers: word arrays nested inside each `segments[i].words`.
+    """
+    raw: List[Dict[str, Any]] = []
+    top = payload.get("words")
+    if isinstance(top, list):
+        raw.extend(top)
+    for seg in payload.get("segments") or []:
+        nested = seg.get("words") if isinstance(seg, dict) else None
+        if isinstance(nested, list):
+            raw.extend(nested)
+    return normalize_words(raw)
+
+
 def normalize_words(raw_words: Optional[List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
     """Convert Whisper verbose_json words into clean CaptionWord dicts.
 
