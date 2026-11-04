@@ -19,6 +19,101 @@ interface VideoSceneProps {
   channelName?: string;
 }
 
+interface FillerFrameProps {
+  src: string;
+  startFrom: number;
+  mode: 'cut' | 'kenburns';
+  durationFrames: number;
+}
+
+const FillerFrame: React.FC<FillerFrameProps> = ({ src, startFrom, mode, durationFrames }) => {
+  const frame = useCurrentFrame();
+  const scale =
+    mode === 'kenburns'
+      ? interpolate(frame, [0, durationFrames], [1.0, 1.08], {
+          extrapolateLeft: 'clamp',
+          extrapolateRight: 'clamp',
+        })
+      : 1.0;
+
+  if (!src) {
+    return <AbsoluteFill style={{ backgroundColor: '#000000' }} />;
+  }
+
+  return (
+    <AbsoluteFill style={{ overflow: 'hidden' }}>
+      <OffthreadVideo
+        src={src}
+        startFrom={startFrom}
+        endAt={startFrom + 1}
+        muted
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+        }}
+      />
+    </AbsoluteFill>
+  );
+};
+
+interface KenBurnsWordmarkProps {
+  theme: ThemeTokens;
+  channelName: string;
+  durationFrames: number;
+}
+
+const KenBurnsWordmark: React.FC<KenBurnsWordmarkProps> = ({
+  theme,
+  channelName,
+  durationFrames,
+}) => {
+  const frame = useCurrentFrame();
+  const opacity = interpolate(
+    frame,
+    [0, Math.min(15, Math.floor(durationFrames / 2)), Math.max(0, durationFrames - 10), durationFrames],
+    [0, 0.85, 0.85, 0],
+    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+  );
+  const accent = theme.accent_color || theme.primary_color || '#06B6D4';
+  const textColor = theme.text_color || theme.text_hex || '#F8FAFC';
+
+  return (
+    <AbsoluteFill
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity,
+        pointerEvents: 'none',
+        zIndex: 25,
+      }}
+    >
+      <div
+        style={{
+          padding: '16px 36px',
+          borderRadius: 16,
+          backgroundColor: 'rgba(15, 23, 42, 0.7)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: `2px solid ${accent}`,
+          boxShadow: `0 8px 32px rgba(0, 0, 0, 0.6), 0 0 20px ${accent}44`,
+          fontFamily: theme.font_family || 'Inter, sans-serif',
+          fontSize: 36,
+          fontWeight: 800,
+          letterSpacing: '0.1em',
+          color: textColor,
+          textTransform: 'uppercase',
+        }}
+      >
+        {channelName}
+      </div>
+    </AbsoluteFill>
+  );
+};
+
 /**
  * Full-bleed Wan 2.1 video scene: no card border, edge-to-edge clips,
  * bottom gradient scrim for text legibility, persistent T20CRICTANK brand

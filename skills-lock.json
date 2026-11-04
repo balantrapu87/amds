@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "comfyui-api": {
+      "source": "mckruz/comfyui-expert",
+      "sourceType": "github",
+      "skillPath": "skills/comfyui-api/SKILL.md",
+      "computedHash": "cbaa85659a4214ac87929d769a6298d48aee7b2d7a1d58f016866a173920e7b8"
+    },
+    "comfyui-prompt-interview": {
+      "source": "mckruz/comfyui-expert",
+      "sourceType": "github",
+      "skillPath": "skills/comfyui-prompt-interview/SKILL.md",
+      "computedHash": "fbeec932ff24732f24376b475939aa6db5b06e0b4700cfedfa4d88a80756650d"
+    },
+    "comfyui-video-pipeline": {
+      "source": "mckruz/comfyui-expert",
+      "sourceType": "github",
+      "skillPath": "skills/comfyui-video-pipeline/SKILL.md",
+      "computedHash": "27e7cc6c68d82299def0b9cf3c0e2804e4fc8ebf06624fc1f7d470e375af0539"
+    }
+  }
+}

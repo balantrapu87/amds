@@ -143,16 +143,20 @@ class WanClient:
         self._http.close()
 
 
-def convert_to_mp4(webp_path: Path, out_path: Path, fps: int) -> Path:
-    """Transcode an animated WEBP into H.264 MP4 at the job frame rate."""
+def convert_to_mp4(input_path: Path, out_path: Path, fps: int) -> Path:
+    """Transcode an animated WEBP or WEBM into H.264 MP4 at the job frame rate."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
+    env = os.environ.copy()
+    local_bin = "/home/pkbala/.local/bin"
+    if local_bin not in env.get("PATH", ""):
+        env["PATH"] = f"{local_bin}:{env.get('PATH', '')}"
     cmd = [
-        "ffmpeg", "-y", "-i", str(webp_path),
+        "ffmpeg", "-y", "-i", str(input_path),
         "-r", str(fps),
         "-c:v", "libx264", "-preset", "medium", "-crf", "18",
         "-pix_fmt", "yuv420p", "-an", str(out_path),
     ]
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+    proc = subprocess.run(cmd, capture_output=True, text=True, env=env)
     if proc.returncode != 0 or not out_path.exists():
         raise VideoGenError(f"ffmpeg conversion failed: {proc.stderr[-300:]}")
     return out_path
@@ -177,14 +181,33 @@ def generate_clip(
 
     prompt_id = client.submit(workflow)
     entry = client.wait(prompt_id)
-    saved = entry.get("outputs", {}).get("28")
-    if not saved or "filename" not in saved:
-        raise VideoGenError("ComfyUI finished without a SaveAnimatedWEBP output.")
+    outputs = entry.get("outputs", {})
 
-    webp_path = out.with_suffix(".webp")
-    client.fetch_file(saved["filename"], webp_path, saved.get("subfolder", ""))
-    convert_to_mp4(webp_path, out, fps)
-    webp_path.unlink(missing_ok=True)
+    filename = None
+    subfolder = ""
+
+    # Check node 47 (SaveWEBM) first for robust video decoding, then node 28 (SaveAnimatedWEBP)
+    for node_id in ("47", "28"):
+        node_out = outputs.get(node_id)
+        if not node_out:
+            continue
+        if "filename" in node_out:
+            filename = node_out["filename"]
+            subfolder = node_out.get("subfolder", "")
+            break
+        images = node_out.get("images") or node_out.get("gifs") or node_out.get("videos")
+        if isinstance(images, list) and images and isinstance(images[0], dict):
+            filename = images[0].get("filename")
+            subfolder = images[0].get("subfolder", "")
+            break
+
+    if not filename:
+        raise VideoGenError("ComfyUI finished without a SaveAnimatedWEBP or SaveWEBM output.")
+
+    raw_path = out.with_suffix(Path(filename).suffix)
+    client.fetch_file(filename, raw_path, subfolder)
+    convert_to_mp4(raw_path, out, fps)
+    raw_path.unlink(missing_ok=True)
     return out
 
 
