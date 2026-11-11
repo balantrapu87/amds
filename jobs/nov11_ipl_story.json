@@ -1,0 +1,113 @@
+{
+  "payload": {
+    "job_id": "t20crictank-ipl-2027-update",
+    "fps": 30,
+    "width": 1080,
+    "height": 1920,
+    "channel_name": "T20CRICTANK",
+    "theme": {
+      "background_hex": "#0B0F1A",
+      "primary_hex": "#3B82F6",
+      "text_hex": "#F8FAFC",
+      "font_family": "Inter, sans-serif",
+      "secondary_color": "#EF4444",
+      "accent_color": "#F59E0B",
+      "surface_color": "#111827",
+      "text_muted_color": "#94A3B8",
+      "border_radius": 16,
+      "padding": 32
+    },
+    "audio": {
+      "voiceover_path": "/opt/data/workspace/amds/jobs/sample_vo.wav",
+      "bgm_path": "/opt/data/workspace/amds/jobs/sample_bgm.wav",
+      "target_lufs": -16.0,
+      "true_peak_db": -1.5,
+      "ducking_threshold_db": -18.0,
+      "ducking_ratio": 4.0,
+      "ducking_attack_ms": 15.0,
+      "ducking_release_ms": 250.0,
+      "bgm_volume_db": -12.0
+    },
+    "scenes": [
+      {
+        "scene_id": "scene-01-hook",
+        "duration_frames": 90,
+        "render_layer": "hybrid",
+        "headline": "IPL 12 TEAMS?",
+        "subtitle": "BCCI Drops a Massive Update!",
+        "body_text": "Are 12 teams really coming to the Indian Premier League?",
+        "icon_asset": "trophy",
+        "voiceover_text": "IPL lo 12 teams expect chesthunnara? BCCI ippude BIG SHOCK ichindi!",
+        "video_prompts": [
+          "Golden T20 cricket championship trophy gleaming on a pedestal under dramatic stadium floodlights at night, fast cinematic zoom in, intense atmosphere, vertical 9:16"
+        ]
+      },
+      {
+        "scene_id": "scene-02-shock",
+        "duration_frames": 120,
+        "render_layer": "kinetic_typography",
+        "headline": "BCCI SAYS NO!",
+        "subtitle": "10 Teams vs 12 Teams Expansion",
+        "body_text": "Immediate expansion to 12 teams in 2028 is almost impossible.",
+        "icon_asset": "ban",
+        "voiceover_text": "2028 lo IPL expand avvadam almost impossible!"
+      },
+      {
+        "scene_id": "scene-03-revelation",
+        "duration_frames": 330,
+        "render_layer": "hybrid",
+        "headline": "ZERO DISCUSSIONS!",
+        "subtitle": "BCCI Secretary Devajit Saikia",
+        "body_text": "No formal or informal talks held — 12-team expansion rumours are pure speculation.",
+        "icon_asset": "shield-alert",
+        "voiceover_text": "BCCI Secretary Devajit Saikia clear ga chepparu. 12 teams gurinchi formal discussion ledu. Informal discussion kuda jaragaledu! Ante 12 teams news antha speculation maatrame!",
+        "video_prompts": [
+          "Official cricket board press conference podium with broadcast microphones and flashing camera strobes in a sleek dark media briefing room, dramatic cinematic lighting, vertical 9:16"
+        ]
+      },
+      {
+        "scene_id": "scene-04-20th-edition",
+        "duration_frames": 360,
+        "render_layer": "hybrid",
+        "headline": "IPL 2027 = 20TH EDITION",
+        "subtitle": "BCCI's Real Focus Is 2027",
+        "body_text": "Full attention is on making the landmark 20th edition of IPL massive.",
+        "icon_asset": "award",
+        "voiceover_text": "Kaani ikkada interesting matter enti telusa? BCCI focus 2028 meeda kaadu. 2027 IPL meeda undi! Endukante 2027 IPL tournament ki 20th edition.",
+        "video_prompts": [
+          "Slow cinematic orbit around a gleaming golden cricket trophy at center pitch inside a packed night stadium with roaring crowd lights and golden fireworks, vertical 9:16"
+        ]
+      },
+      {
+        "scene_id": "scene-05-money-angle",
+        "duration_frames": 390,
+        "render_layer": "kinetic_typography",
+        "headline": "₹125 CR → ₹150 CR?",
+        "subtitle": "Auction Purse Rumours & Mega Auction",
+        "body_text": "Rumours suggest a ₹150 Cr purse hike ahead of next year's mega auction, though unconfirmed by BCCI.",
+        "icon_asset": "indian-rupee",
+        "voiceover_text": "Inko interesting update! IPL auction purse 125 crores nunchi 150 crores ki increase avuthundani rumours unnayi. Kaani BCCI official ga confirm cheyyaledu! Mega auction kuda next year schedule avuthundi."
+      },
+      {
+        "scene_id": "scene-06-january-debate",
+        "duration_frames": 390,
+        "render_layer": "kinetic_typography",
+        "headline": "JANUARY IPL?",
+        "subtitle": "March 2027 Remains the Target",
+        "body_text": "Despite Juhi Chawla's January suggestion, BCCI is locked on a March 2027 window.",
+        "icon_asset": "calendar-clock",
+        "voiceover_text": "Inka Juhi Chawla January lo IPL conduct cheyyalani suggest chesaru. Kaani BCCI response? March 2027 nunchi IPL start cheyyadame maa focus ani clear chesindi!"
+      },
+      {
+        "scene_id": "scene-07-payoff",
+        "duration_frames": 360,
+        "render_layer": "kinetic_typography",
+        "headline": "10 TEAMS vs 12 TEAMS?",
+        "subtitle": "Drop Your Vote in the Comments!",
+        "body_text": "Do you want 12 teams or a bigger 10-team IPL? Subscribe to T20CricTank for more updates!",
+        "icon_asset": "message-circle",
+        "voiceover_text": "So, IPL fans... Meeru em korukuntunnaru? 12 teams expansion aa? Leda existing 10 teams tho bigger IPL aa? Mee opinion comments lo cheppandi. Ilaanti IPL updates kosam T20CricTank subscribe avvandi!"
+      }
+    ]
+  }
+}

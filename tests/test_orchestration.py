@@ -117,6 +117,9 @@ class FakeWanClient:
     def __init__(self, base_url, **kw):
         pass
 
+    def wakeup(self):
+        return True
+
     def close(self):
         pass
 

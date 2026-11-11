@@ -127,8 +127,9 @@ export const KineticScene: React.FC<KineticSceneProps> = ({ scene, theme }) => {
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        // Card layout: 10% breathing border on every side (video scenes are full-bleed instead).
-        padding: '10%',
+        // Reserved top band: brand chip (top-left) + caption pill (top-center,
+        // ends ~100px). Card starts below that so captions never overlap content.
+        padding: '150px 7% 7% 7%',
         boxSizing: 'border-box',
         zIndex: 10,
         position: 'relative',

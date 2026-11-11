@@ -50,7 +50,7 @@ fi
 
 echo ""
 echo "==> Checking LLM inference endpoint & models..."
-OPENAI_BASE_URL="${OPENAI_BASE_URL:-http://127.0.0.1:8080/v1}"
+OPENAI_BASE_URL="${OPENAI_BASE_URL:-http://10.99.99.2:8080/v1}"
 if MODELS_JSON=$(curl --noproxy "*" -s -f -m 5 "${OPENAI_BASE_URL}/models" 2>/dev/null); then
   echo "  [✓] LLM endpoint is REACHABLE at ${OPENAI_BASE_URL}"
   if echo "${MODELS_JSON}" | grep -q '"qwen-coder"'; then

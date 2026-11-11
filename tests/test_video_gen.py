@@ -72,6 +72,8 @@ def _mock_transport(responses):
     state = {"n": 0}
 
     def handler(request):
+        if request.url.path == "/system_stats":
+            return httpx.Response(200, json={"system": {"comfyui_version": "0.3.0"}})
         if request.url.path == "/prompt":
             return httpx.Response(200, json={"prompt_id": f"pid{state['n']}"})
         if request.url.path.startswith("/history/"):

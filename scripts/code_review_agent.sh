@@ -29,7 +29,7 @@ fi
 
 # Endpoint & Model Defaults (Local llama-swap/vllm or OpenAI-compatible)
 # Coding & code review uses qwen-coder; creative thinking uses qwen
-OPENAI_BASE_URL="${OPENAI_BASE_URL:-http://127.0.0.1:8080/v1}"
+OPENAI_BASE_URL="${OPENAI_BASE_URL:-http://10.99.99.2:8080/v1}"
 MODEL_NAME="${MODEL_NAME:-qwen-coder}"
 OPENAI_API_KEY="${OPENAI_API_KEY:-dummy-key}"
 DRY_RUN="${DRY_RUN:-0}"

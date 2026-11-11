@@ -107,10 +107,19 @@ def build_workflow(
 
 
 class WanClient:
-    """Thin ComfyUI API client (prompt -> history -> view)."""
+    """Thin ComfyUI API client (wakeup -> prompt -> history -> view) via llama-swap."""
 
     def __init__(self, base_url: str, timeout: float = 600.0, transport: Optional[httpx.BaseTransport] = None) -> None:
-        self._http = httpx.Client(base_url=base_url, timeout=timeout, transport=transport)
+        self._http = httpx.Client(base_url=base_url.rstrip("/"), timeout=timeout, transport=transport)
+
+    def wakeup(self) -> bool:
+        """Hit /system_stats on llama-swap so on-demand comfyui-wan spins up when idle."""
+        try:
+            resp = self._http.get("/system_stats")
+            return resp.status_code == 200
+        except httpx.HTTPError as exc:
+            logger.warning("ComfyUI wakeup (/system_stats) failed: %s", exc)
+            return False
 
     def submit(self, workflow: Dict[str, Any]) -> str:
         resp = self._http.post("/prompt", json={"prompt": workflow})
@@ -239,6 +248,7 @@ def generate_scene_clips(
     results: List[str] = []
 
     with _GEN_LOCK:
+        client.wakeup()
         for i, frames in enumerate(clips):
             out_path = out_dir / f"scene-{i}.mp4"
             last_error: Optional[Exception] = None

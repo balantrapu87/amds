@@ -54,16 +54,16 @@ app.add_middleware(
 # Model Routing:
 # - Creative writing, narrative thinking, storyboard synthesis: 'qwen'
 # - Code generation, programmatic transforms, code review: 'qwen-coder'
-LLM_ENDPOINT = os.getenv("LLM_ENDPOINT", "http://127.0.0.1:8080/v1/chat/completions")
+LLM_ENDPOINT = os.getenv("LLM_ENDPOINT", "http://10.99.99.2:8080/v1/chat/completions")
 LLM_MODEL = os.getenv("LLM_MODEL", "qwen")
 LLM_CODER_MODEL = os.getenv("LLM_CODER_MODEL", "qwen-coder")
 REMOTION_ROOT = os.getenv("REMOTION_ROOT", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "remotion")))
 OUTPUT_DIR = os.getenv("OUTPUT_DIR", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "output")))
 JOBS_DIR = os.getenv("JOBS_DIR", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "jobs")))
 RENDER_CONCURRENCY = int(os.getenv("RENDER_CONCURRENCY", "16"))
-# Local AI services
-WHISPER_URL = os.getenv("WHISPER_URL", "http://127.0.0.1:8080/v1/audio/transcriptions")
-WAN_COMFYUI_URL = os.getenv("WAN_COMFYUI_URL", "http://127.0.0.1:8080/comfyui")
+# Local AI services via llama-swap on AIPC (10.99.99.2:8080)
+WHISPER_URL = os.getenv("WHISPER_URL", "http://10.99.99.2:8080/v1/audio/transcriptions")
+WAN_COMFYUI_URL = os.getenv("WAN_COMFYUI_URL", "http://10.99.99.2:8080")
 # Scene narration tail (ms) appended after the last spoken word before the cut.
 NARRATION_TAIL_MS = int(os.getenv("NARRATION_TAIL_MS", "750"))
 
@@ -400,7 +400,7 @@ async def execute_render_pipeline(job_id: str, job_payload: StudioJobPayload):
             raw_video_path,
             f"--props={props_path}",
             f"--concurrency={RENDER_CONCURRENCY}",
-            "--gl=angle",
+            "--gl=" + os.getenv("REMOTION_GL", "swangle"),
             "--log=info"
         ]
 

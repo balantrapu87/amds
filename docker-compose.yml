@@ -12,13 +12,13 @@ services:
       - "8000:8000"
     environment:
       - RENDER_CONCURRENCY=16
-      - LLM_ENDPOINT=http://host.docker.internal:8080/v1/chat/completions
+      - LLM_ENDPOINT=http://10.99.99.2:8080/v1/chat/completions
       - LLM_MODEL=qwen
       - LLM_CODER_MODEL=qwen-coder
       - EDGE_TTS_VOICE=en-US-AriaNeural
-      # Local AI services (Whisper + ComfyUI Wan 2.1 on the host)
-      - WHISPER_URL=http://host.docker.internal:8080/v1/audio/transcriptions
-      - WAN_COMFYUI_URL=http://host.docker.internal:8080/comfyui
+      # Local AI services (Whisper + ComfyUI Wan 2.1 via llama-swap on AIPC 10.99.99.2:8080)
+      - WHISPER_URL=http://10.99.99.2:8080/v1/audio/transcriptions
+      - WAN_COMFYUI_URL=http://10.99.99.2:8080
       - WAN_MODEL=wan2.1_t2v_14B_fp8_e4m3fn.safetensors
       - WAN_FALLBACK_MODEL=wan2.1_t2v_1.3B_bf16.safetensors
       - NARRATION_TAIL_MS=750
