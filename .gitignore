@@ -54,3 +54,4 @@ Thumbs.db
 remotion/build
 
 .env.local
+prompts/
